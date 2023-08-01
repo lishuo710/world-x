@@ -1,1 +1,7 @@
 ﻿webgl/.vite
+server/.idea
+server/obj
+unity/Logs
+unity/Temp
+unity/Library
+unity/UserSettings
