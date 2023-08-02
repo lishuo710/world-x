@@ -6,6 +6,7 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { PhysicsImpostor } from '@babylonjs/core/Physics/physicsImpostor';
 import { Nullable } from '@babylonjs/core/types';
 import { AdvancedDynamicTexture } from '@babylonjs/gui/2D/advancedDynamicTexture';
+import { GLTFFileLoader } from '@babylonjs/loaders';
 import { useRef, useEffect, FC } from 'react';
 
 type BouncySphereProps = {
