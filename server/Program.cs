@@ -1,108 +1,72 @@
-﻿using System;
+﻿using System.Collections.ObjectModel;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using NetCoreServer;
+using server.Models;
+using server.Network;
+using Timer = System.Timers.Timer;
 
-
-class ChatSession : TcpSession
+public static class Program
 {
-    public ChatSession(TcpServer server) : base(server)
+    public static ObservableCollection<ClientModel> Clients { get; private set; } =
+        new ObservableCollection<ClientModel>();
+
+    private static Timer? _timers;
+
+    private static void Main(string[] args)
     {
+        PrintLine($"初始化连接,当前地址：{IPAddress.Any}:{200001}");
+        SetUpTcpService();
     }
 
-    protected override void OnConnected()
+    private static void SetUpTcpService()
     {
-        Console.WriteLine($"Chat TCP session with Id {Id} connected!");
-
-        // Send invite message
-        string message = "Hello from TCP chat! Please send a message or '!' to disconnect the client!";
-        SendAsync(message);
+        new TcpGameServer().RunServer(ReceivedData, OnClientDisconnected, OnClientConnected);
     }
 
-    protected override void OnDisconnected()
+    private static void ReceivedData(IPEndPoint remoteIpEndPoint, ReceiveModel msg, IGameServer service)
     {
-        Console.WriteLine($"Chat TCP session with Id {Id} disconnected!");
+
     }
 
-    protected override void OnReceived(byte[] buffer, long offset, long size)
+    private static void OnClientConnected(EndPoint point)
     {
-        string message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-        Console.WriteLine("Incoming: " + message);
 
-        // Multicast message to all connected sessions
-        Server.Multicast(message);
-
-        // If the buffer starts with '!' the disconnect the current session
-        if (message == "!")
-            Disconnect();
     }
 
-    protected override void OnError(SocketError error)
+    private static void OnClientDisconnected(EndPoint point)
     {
-        Console.WriteLine($"Chat TCP session caught an error with code {error}");
-    }
-}
-
-class ChatServer : TcpServer
-    {
-        public ChatServer(IPAddress address, int port) : base(address, port) {}
-
-        protected override TcpSession CreateSession() { return new ChatSession(this); }
-
-        protected override void OnError(SocketError error)
+        try
         {
-            Console.WriteLine($"Chat TCP server caught an error with code {error}");
+            var client = Clients.FirstOrDefault(c => c.EndPoint.Equals(point));
+            if (client == null) return;
+            Clients.Remove(client);
+        }
+        catch (Exception ex)
+        {
+            PrintLine("在ClientDisconnected触发以后，删除client时报错了," + ex.Message + ", " + ex.StackTrace);
         }
     }
 
-class Program
-{
-    static void Main(string[] args)
+    private static void SetUpTimer()
     {
-        // TCP server port
-        int port = 1111;
-        if (args.Length > 0)
-            port = int.Parse(args[0]);
-
-        Console.WriteLine($"TCP server port: {port}");
-
-        Console.WriteLine();
-
-        // Create a new TCP chat server
-        var server = new ChatServer(IPAddress.Any, port);
-
-        // Start the server
-        Console.Write("Server starting...");
-        server.Start();
-        Console.WriteLine("Done!");
-
-        Console.WriteLine("Press Enter to stop the server or '!' to restart the server...");
-
-        // Perform text input
-        for (;;)
-        {
-            string line = Console.ReadLine();
-            if (string.IsNullOrEmpty(line))
-                break;
-
-            // Restart the server
-            if (line == "!")
-            {
-                Console.Write("Server restarting...");
-                server.Restart();
-                Console.WriteLine("Done!");
-                continue;
-            }
-
-            // Multicast admin message to all sessions
-            line = "(admin) " + line;
-            server.Multicast(line);
-        }
-
-        // Stop the server
-        Console.Write("Server stopping...");
-        server.Stop();
-        Console.WriteLine("Done!");
+        _timers = new System.Timers.Timer(500);
+        _timers.Elapsed += Timer_Elapsed;
+        _timers.AutoReset = true;
+        _timers.Start();
     }
+
+    private static void Timer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+    {
+        NotifyClient();
+    }
+
+    private static void NotifyClient()
+    {
+        //TODO: send msg to client
+    }
+
+    private static void PrintLine(string message)
+    {
+        Console.WriteLine(message);
+    }
+
 }
