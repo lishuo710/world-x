@@ -9,6 +9,8 @@ import {
   SceneOptions,
   Vector3,
   SceneLoader,
+  ActionManager,
+  ExecuteCodeAction,
 } from "@babylonjs/core";
 import React, { FC, useEffect, useRef } from "react";
 
@@ -138,8 +140,21 @@ const onSceneReady: OnSceneReadyHandler = async (scene) => {
       console.log(130, meshes);
     }
   );
-};
 
+  // Keyboard events
+  scene.actionManager = new ActionManager(scene);
+  scene.actionManager.registerAction(
+    new ExecuteCodeAction(ActionManager.OnKeyDownTrigger, function (evt) {
+      inputMap[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+    })
+  );
+  scene.actionManager.registerAction(
+    new ExecuteCodeAction(ActionManager.OnKeyUpTrigger, function (evt) {
+      inputMap[evt.sourceEvent.key] = evt.sourceEvent.type == "keydown";
+    })
+  );
+};
+const inputMap = {};
 /**
  * Will run on every frame render.  We are spinning the box on y-axis.
  */
@@ -149,6 +164,33 @@ const onRender: OnRenderHandler = (scene) => {
 
     const rpm = 10;
     box.rotation.y += (rpm / 60) * Math.PI * 2 * (deltaTimeInMillis / 1000);
+  }
+
+  let heroRotationSpeed = 1;
+  let heroSpeed = 1;
+  let heroSpeedBackwards = 1;
+
+  //character control
+  let keydown = false;
+  //Manage the movements of the character (e.g. position, direction)
+  if (inputMap["w"]) {
+    box.movePOV(0, 0, heroSpeed);
+    keydown = true;
+  }
+  if (inputMap["s"]) {
+    box.moveWithCollisions(box.forward.scaleInPlace(-heroSpeedBackwards));
+    keydown = true;
+  }
+  if (inputMap["a"]) {
+    box.rotate(Vector3.Up(), -heroRotationSpeed);
+    keydown = true;
+  }
+  if (inputMap["d"]) {
+    box.rotate(Vector3.Up(), heroRotationSpeed);
+    keydown = true;
+  }
+  if (inputMap["b"]) {
+    keydown = true;
   }
 };
 
