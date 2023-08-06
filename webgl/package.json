@@ -12,6 +12,7 @@
   "dependencies": {
     "@babylonjs/core": "^6.14.0",
     "@babylonjs/gui": "^6.14.1",
+    "@babylonjs/havok": "^1.1.2",
     "@babylonjs/loaders": "^6.14.1",
     "babylonjs": "^6.14.0",
     "babylonjs-hook": "^0.1.1",
